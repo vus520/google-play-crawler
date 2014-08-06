@@ -111,7 +111,9 @@ public class googleplay {
 	downloadParser.addArgument("packagename").nargs("+").help("applications to download");
 
 	/* =================Check-In Arguments============== */
-	subparsers.addParser("checkin", true).description("checkin section!").setDefault("command", COMMAND.CHECKIN);
+	Subparser checkinParser = subparsers.addParser("checkin", true).description("checkin section!")
+			.setDefault("command", COMMAND.CHECKIN);
+	checkinParser.addArgument("device").help("path to device properties file");
 
 	/* =================List Arguments============== */
 	Subparser listParser = subparsers.addParser("list", true)
@@ -514,10 +516,11 @@ public class googleplay {
 	String email = namespace.getString("email");
 	String password = namespace.getString("password");
 	String localization = namespace.getString("localization");
-
+	String device = namespace.getString("device");
+	
 	if (email != null && password != null) {
 	    createCheckinableService(email, password, localization);
-	    service.checkin();
+	    service.checkin(device);
 	    return;
 	}
 
@@ -531,7 +534,7 @@ public class googleplay {
 
 	    if (email != null && password != null) {
 		createCheckinableService(email, password, localization);
-		service.checkin();
+		service.checkin(device);
 		return;
 	    }
 	}

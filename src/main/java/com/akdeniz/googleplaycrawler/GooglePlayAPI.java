@@ -150,7 +150,7 @@ public class GooglePlayAPI {
      * {@link AndroidCheckinResponse} instance.
      * 
      */
-    public AndroidCheckinResponse checkin() throws Exception {
+    public AndroidCheckinResponse checkin(String device) throws Exception {
 
 	// this first checkin is for generating android-id
 	AndroidCheckinResponse checkinResponse = postCheckin(Utils.generateAndroidCheckinRequest().toByteArray());
@@ -158,8 +158,8 @@ public class GooglePlayAPI {
 	setSecurityToken((BigInteger.valueOf(checkinResponse.getSecurityToken()).toString(16)));
 
 	String c2dmAuth = loginAC2DM();
-
-	AndroidCheckinRequest.Builder checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest());
+	
+	AndroidCheckinRequest.Builder checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest(device));
 
 	AndroidCheckinRequest build = checkInbuilder.setId(new BigInteger(this.getAndroidID(), 16).longValue())
 		.setSecurityToken(new BigInteger(getSecurityToken(), 16).longValue()).addAccountCookie("[" + getEmail() + "]")
