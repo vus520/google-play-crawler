@@ -166,8 +166,10 @@ public class googleplay {
 		.help("how many recommendations will be listed");
 	
 	/* =================Register Arguments============== */
-	subparsers.addParser("register", true).description("registers device so that can be seen from web!")
+	Subparser registerParser = subparsers.addParser("register", true).description("registers device so that can be seen from web!")
 		.setDefault("command", COMMAND.REGISTER);
+	registerParser.addArgument("device").help("path to device properties file");
+	
 	
 	/* =================UseGCM Arguments============== */
 	subparsers.addParser("usegcm", true).description("listens GCM(GoogleCloudMessaging) for download notification and downloads them!")
@@ -331,8 +333,12 @@ public class googleplay {
     }
     
     private void registerCommand() throws Exception {
+    String device = namespace.getString("device");
+    if (device == null) {
+    	throw new GooglePlayException("Lack of information for register!");
+    }
 	login();
-	service.uploadDeviceConfig();
+	service.uploadDeviceConfig(Utils.parseDeviceProperties(device));
 	System.out.println("A device is registered to your account! You can see it at \"https://play.google.com/store/account\" after a few downloads!");
     }
 
@@ -518,9 +524,9 @@ public class googleplay {
 	String localization = namespace.getString("localization");
 	String device = namespace.getString("device");
 	
-	if (email != null && password != null) {
+	if (email != null && password != null && device != null) {
 	    createCheckinableService(email, password, localization);
-	    service.checkin(device);
+	    service.checkin(Utils.parseDeviceProperties(device));
 	    return;
 	}
 
@@ -531,10 +537,11 @@ public class googleplay {
 	    email = properties.getProperty("email");
 	    password = properties.getProperty("password");
 	    localization = properties.getProperty("localization");
+	    device = properties.getProperty("device");
 
-	    if (email != null && password != null) {
+	    if (email != null && password != null && device != null) {
 		createCheckinableService(email, password, localization);
-		service.checkin(device);
+		service.checkin(Utils.parseDeviceProperties(device));
 		return;
 	    }
 	}

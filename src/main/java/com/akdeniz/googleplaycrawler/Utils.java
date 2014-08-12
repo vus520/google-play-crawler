@@ -156,47 +156,45 @@ public class Utils {
 	return https;
     }
 
-    public static AndroidCheckinRequest generateAndroidCheckinRequest(String conf) {
-    	try {
-	    	Properties properties = new Properties();
-		    properties.load(new FileInputStream(conf));
-		    
-	    	return AndroidCheckinRequest.newBuilder()
-	    			.setId(0)
-	    			.setCheckin(
-	    					AndroidCheckinProto.newBuilder().setBuild(
-	    							AndroidBuildProto.newBuilder()
-	    							.setId(properties.getProperty("build_id"))
-	    							.setProduct(properties.getProperty("build_product"))
-	    							.setCarrier("Google")
-	    							.setRadio(properties.getProperty("build_radio"))
-	    							.setBootloader(properties.getProperty("build_bootloader"))
-	    							.setClient("android-google")
-	    							.setTimestamp(new Date().getTime() / 1000)
-	    							.setGoogleServices(Integer.parseInt(properties.getProperty("build_gservices")))
-	    							.setDevice(properties.getProperty("build_device"))
-	    							.setSdkVersion(Integer.parseInt(properties.getProperty("build_sdkversion")))
-	    							.setModel(properties.getProperty("build_model"))
-	    							.setManufacturer(properties.getProperty("build_manufacturer"))
-	    							.setBuildProduct(properties.getProperty("build_buildProduct"))
-	    							.setOtaInstalled(false)
-	    							)
-	    					.setLastCheckinMsec(0)
-	    					.setCellOperator(properties.getProperty("telephony_cellOperator"))
-	    					.setSimOperator(properties.getProperty("telephony_simOperator"))
-	    					.setRoaming(properties.getProperty("telephony_roaming"))
-	    					.setUserNumber(0)
-	    					)
-	    			.setLocale("en_US")
-	    			.setTimeZone("Europe/Istanbul")
-	    			.setVersion(3)
-	    			.setDeviceConfiguration(getDeviceConfigurationProto(conf))
-	    			.setFragment(0)
-	    			.build();
-    	}
-    	catch (Exception exc) {
-    		return generateDefaultAndroidCheckinRequest();
-    	}
+    public static Properties parseDeviceProperties(String confFilename) throws Exception {
+    	Properties properties = new Properties();
+	    properties.load(new FileInputStream(confFilename));
+	    return properties;
+    }
+    
+    public static AndroidCheckinRequest generateAndroidCheckinRequest(Properties properties) throws Exception {
+	return AndroidCheckinRequest.newBuilder()
+			.setId(0)
+			.setCheckin(
+					AndroidCheckinProto.newBuilder().setBuild(
+							AndroidBuildProto.newBuilder()
+							.setId(properties.getProperty("build_id"))
+							.setProduct(properties.getProperty("build_product"))
+							.setCarrier("Google")
+							.setRadio(properties.getProperty("build_radio"))
+							.setBootloader(properties.getProperty("build_bootloader"))
+							.setClient("android-google")
+							.setTimestamp(new Date().getTime() / 1000)
+							.setGoogleServices(Integer.parseInt(properties.getProperty("build_gservices")))
+							.setDevice(properties.getProperty("build_device"))
+							.setSdkVersion(Integer.parseInt(properties.getProperty("build_sdkversion")))
+							.setModel(properties.getProperty("build_model"))
+							.setManufacturer(properties.getProperty("build_manufacturer"))
+							.setBuildProduct(properties.getProperty("build_buildProduct"))
+							.setOtaInstalled(false)
+							)
+					.setLastCheckinMsec(0)
+					.setCellOperator(properties.getProperty("telephony_cellOperator"))
+					.setSimOperator(properties.getProperty("telephony_simOperator"))
+					.setRoaming(properties.getProperty("telephony_roaming"))
+					.setUserNumber(0)
+					)
+			.setLocale("en_US")
+			.setTimeZone("Europe/Istanbul")
+			.setVersion(3)
+			.setDeviceConfiguration(getDeviceConfigurationProto(properties))
+			.setFragment(0)
+			.build();
     }
     
     /**
@@ -208,7 +206,6 @@ public class Utils {
      * +GT-I9300+Galaxy+S+III&testgroup=system </a>
      */
     public static AndroidCheckinRequest generateDefaultAndroidCheckinRequest() {
-
 	return AndroidCheckinRequest
 		.newBuilder()
 		.setId(0)
@@ -228,10 +225,7 @@ public class Utils {
 		.setDeviceConfiguration(getDefaultDeviceConfigurationProto()).setFragment(0).build();
     }
 
-    public static DeviceConfigurationProto getDeviceConfigurationProto(String conf) throws Exception {
-    	Properties properties = new Properties();
-	    properties.load(new FileInputStream(conf));
-    	
+    public static DeviceConfigurationProto getDeviceConfigurationProto(Properties properties) throws Exception {
     	return DeviceConfigurationProto.newBuilder()
     			.setTouchScreen(Integer.parseInt(properties.getProperty("device_touchScreen")))
     			.setKeyboard(Integer.parseInt(properties.getProperty("device_keyboard")))
@@ -248,7 +242,7 @@ public class Utils {
     			.addAllNativePlatform(Arrays.asList(properties.getProperty("build_platforms").split(", ")))
     			.addAllSystemSupportedLocale(Arrays.asList(properties.getProperty("system_locales").split(", ")))
     			.addAllGlExtension(Arrays.asList(properties.getProperty("gl_extensions").split(", ")))
-    			.build();   			
+    			.build();
     }
     
     public static DeviceConfigurationProto getDefaultDeviceConfigurationProto() {

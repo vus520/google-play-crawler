@@ -24,6 +24,7 @@ import com.akdeniz.googleplaycrawler.GooglePlay.DetailsResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.ListResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.Offer;
 import com.akdeniz.googleplaycrawler.GooglePlay.SearchResponse;
+import com.akdeniz.googleplaycrawler.cli.*;
 
 public class TestGooglePlayCrawler {
 
@@ -55,10 +56,12 @@ public class TestGooglePlayCrawler {
 			service.setClient(getProxiedHttpClient(host, Integer.valueOf(port)));
 		}
 	}
-
+	
 	@Test
 	public void shouldCheckin() throws Exception {
-		service.checkin();
+		// allow server to catch up after checkin...
+		Thread.sleep(5000);
+		service.checkin(Utils.parseDeviceProperties("./devices/lgG2.conf"));
 	}
 
 	@Test(dependsOnMethods = { "shouldCheckin" })
@@ -67,10 +70,12 @@ public class TestGooglePlayCrawler {
 		Thread.sleep(5000);
 		service.login();
 	}
-
+	
 	@Test(dependsOnMethods = { "shouldLogin" })
 	public void shouldUploadDeviceConfiguration() throws Exception {
-		service.uploadDeviceConfig();
+		// allow server to catch up after previous upload...
+		Thread.sleep(5000);
+		service.uploadDeviceConfig(Utils.parseDeviceProperties("./devices/lgG2.conf"));
 	}
 
 	@Test(dependsOnMethods = { "shouldLogin" })
@@ -154,4 +159,15 @@ public class TestGooglePlayCrawler {
 		downloadStream.close();
 		outputStream.close();
 	}
+	
+	@Test
+	public void tmpTest() {
+		String args[] = new String[] {"-e", "lge.test.another@gmail.com", "-p", "lge12345", "device", "ssG3.conf"};
+	}
+	
+	}
+	
+	
+	
+	
 }

@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,6 +34,7 @@ import com.akdeniz.googleplaycrawler.GooglePlay.BulkDetailsRequest.Builder;
 import com.akdeniz.googleplaycrawler.GooglePlay.BulkDetailsResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.BuyResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.DetailsResponse;
+import com.akdeniz.googleplaycrawler.GooglePlay.DeviceConfigurationProto;
 import com.akdeniz.googleplaycrawler.GooglePlay.HttpCookie;
 import com.akdeniz.googleplaycrawler.GooglePlay.ListResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.ResponseWrapper;
@@ -150,10 +152,10 @@ public class GooglePlayAPI {
      * {@link AndroidCheckinResponse} instance.
      * 
      */
-    public AndroidCheckinResponse checkin(String device) throws Exception {
+    public AndroidCheckinResponse checkin(Properties device) throws Exception {
 
 	// this first checkin is for generating android-id
-	AndroidCheckinResponse checkinResponse = postCheckin(Utils.generateAndroidCheckinRequest().toByteArray());
+	AndroidCheckinResponse checkinResponse = postCheckin(Utils.generateDefaultAndroidCheckinRequest().toByteArray());
 	this.setAndroidID(BigInteger.valueOf(checkinResponse.getAndroidId()).toString(16));
 	setSecurityToken((BigInteger.valueOf(checkinResponse.getSecurityToken()).toString(16)));
 
@@ -379,10 +381,10 @@ public class GooglePlayAPI {
      * 
      * @see https://play.google.com/store/account
      */
-    public UploadDeviceConfigResponse uploadDeviceConfig() throws Exception {
+    public UploadDeviceConfigResponse uploadDeviceConfig(Properties device) throws Exception {
 
 	UploadDeviceConfigRequest request = UploadDeviceConfigRequest.newBuilder()
-		.setDeviceConfiguration(Utils.getDeviceConfigurationProto()).build();
+		.setDeviceConfiguration(Utils.getDeviceConfigurationProto(device)).build();
 	ResponseWrapper responseWrapper = executePOSTRequest(UPLOADDEVICECONFIG_URL, request.toByteArray(),
 		"application/x-protobuf");
 	return responseWrapper.getPayload().getUploadDeviceConfigResponse();
