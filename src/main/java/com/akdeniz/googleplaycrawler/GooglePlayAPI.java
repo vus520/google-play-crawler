@@ -161,7 +161,14 @@ public class GooglePlayAPI {
 
 	String c2dmAuth = loginAC2DM();
 	
-	AndroidCheckinRequest.Builder checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest(device));
+	AndroidCheckinRequest.Builder checkInbuilder;
+	String defFlag = device.getProperty("default");
+	if ((defFlag != null) && (defFlag.equals("true"))) {
+	checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateDefaultAndroidCheckinRequest());
+	}
+	else {
+	checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest(device));
+	}
 
 	AndroidCheckinRequest build = checkInbuilder.setId(new BigInteger(this.getAndroidID(), 16).longValue())
 		.setSecurityToken(new BigInteger(getSecurityToken(), 16).longValue()).addAccountCookie("[" + getEmail() + "]")
@@ -383,8 +390,16 @@ public class GooglePlayAPI {
      */
     public UploadDeviceConfigResponse uploadDeviceConfig(Properties device) throws Exception {
 
-	UploadDeviceConfigRequest request = UploadDeviceConfigRequest.newBuilder()
+	UploadDeviceConfigRequest request;
+	String defFlag = device.getProperty("default");
+	if ((defFlag != null) && (defFlag.equals("true"))) {
+	request = UploadDeviceConfigRequest.newBuilder()
+		.setDeviceConfiguration(Utils.getDefaultDeviceConfigurationProto()).build();
+	}
+	else {
+	request = UploadDeviceConfigRequest.newBuilder()
 		.setDeviceConfiguration(Utils.getDeviceConfigurationProto(device)).build();
+	}
 	ResponseWrapper responseWrapper = executePOSTRequest(UPLOADDEVICECONFIG_URL, request.toByteArray(),
 		"application/x-protobuf");
 	return responseWrapper.getPayload().getUploadDeviceConfigResponse();

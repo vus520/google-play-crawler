@@ -95,6 +95,7 @@ public class googleplay {
 		.setDefault(FeatureControl.SUPPRESS);
 	parser.addArgument("-p", "--password").nargs("?").help("Password to be used for login.")
 		.setDefault(FeatureControl.SUPPRESS);
+	parser.addArgument("-d", "--device").nargs("?").help("Device properties to be used for checkin");
 	parser.addArgument("-t", "--securitytoken").nargs("?").help("Security token that was generated at checkin. It is only required for \"usegcm\" option")
 	.setDefault(FeatureControl.SUPPRESS);
 	parser.addArgument("-z", "--localization").nargs("?").help("Localization string that will customise fetched informations such as reviews, " +
@@ -113,7 +114,6 @@ public class googleplay {
 	/* =================Check-In Arguments============== */
 	Subparser checkinParser = subparsers.addParser("checkin", true).description("checkin section!")
 			.setDefault("command", COMMAND.CHECKIN);
-	checkinParser.addArgument("device").help("path to device properties file");
 
 	/* =================List Arguments============== */
 	Subparser listParser = subparsers.addParser("list", true)
@@ -168,7 +168,6 @@ public class googleplay {
 	/* =================Register Arguments============== */
 	Subparser registerParser = subparsers.addParser("register", true).description("registers device so that can be seen from web!")
 		.setDefault("command", COMMAND.REGISTER);
-	registerParser.addArgument("device").help("path to device properties file");
 	
 	
 	/* =================UseGCM Arguments============== */
@@ -334,11 +333,16 @@ public class googleplay {
     
     private void registerCommand() throws Exception {
     String device = namespace.getString("device");
-    if (device == null) {
-    	throw new GooglePlayException("Lack of information for register!");
+    Properties props = new Properties();
+    if (device != null) {
+    	props = Utils.parseDeviceProperties(device);
+    	props.setProperty("default", "false");
+    }
+    else {
+    	props.setProperty("default", "true");
     }
 	login();
-	service.uploadDeviceConfig(Utils.parseDeviceProperties(device));
+	service.uploadDeviceConfig(props);
 	System.out.println("A device is registered to your account! You can see it at \"https://play.google.com/store/account\" after a few downloads!");
     }
 
@@ -524,9 +528,17 @@ public class googleplay {
 	String localization = namespace.getString("localization");
 	String device = namespace.getString("device");
 	
-	if (email != null && password != null && device != null) {
+	if (email != null && password != null) {
 	    createCheckinableService(email, password, localization);
-	    service.checkin(Utils.parseDeviceProperties(device));
+	    Properties props = new Properties();
+	    if (device != null) {
+    	props = Utils.parseDeviceProperties(device);
+    	props.setProperty("default", "false");
+	    }
+	    else {
+	    props.setProperty("default", "true");	
+	    }
+	    service.checkin(props);
 	    return;
 	}
 
@@ -539,9 +551,17 @@ public class googleplay {
 	    localization = properties.getProperty("localization");
 	    device = properties.getProperty("device");
 
-	    if (email != null && password != null && device != null) {
+	    if (email != null && password != null) {
 		createCheckinableService(email, password, localization);
-		service.checkin(Utils.parseDeviceProperties(device));
+		Properties props = new Properties();
+	    if (device != null) {
+    	props = Utils.parseDeviceProperties(device);
+    	props.setProperty("default", "false");
+	    }
+	    else {
+	    props.setProperty("default", "true");	
+	    }
+		service.checkin(props);
 		return;
 	    }
 	}
