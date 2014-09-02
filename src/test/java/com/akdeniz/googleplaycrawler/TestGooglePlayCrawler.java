@@ -29,6 +29,7 @@ import com.akdeniz.googleplaycrawler.cli.*;
 public class TestGooglePlayCrawler {
 
 	private static GooglePlayAPI service;
+	private static googleplay gplay;
 
 	private static HttpClient getProxiedHttpClient(String host, Integer port) throws Exception {
 		HttpClient client = new DefaultHttpClient(GooglePlayAPI.getConnectionManager());
@@ -51,6 +52,7 @@ public class TestGooglePlayCrawler {
 		String port = properties.getProperty("port");
 
 		service = new GooglePlayAPI(email, password);
+		gplay = new googleplay();
 
 		if (host != null && port != null) {
 			service.setClient(getProxiedHttpClient(host, Integer.valueOf(port)));
@@ -61,7 +63,7 @@ public class TestGooglePlayCrawler {
 	public void shouldCheckin() throws Exception {
 		// allow server to catch up after checkin...
 		Thread.sleep(5000);
-		service.checkin(Utils.parseDeviceProperties("./devices/lgG2.conf"));
+		service.checkin(Utils.parseDeviceProperties("lgG2"));
 	}
 
 	@Test(dependsOnMethods = { "shouldCheckin" })
@@ -75,7 +77,7 @@ public class TestGooglePlayCrawler {
 	public void shouldUploadDeviceConfiguration() throws Exception {
 		// allow server to catch up after previous upload...
 		Thread.sleep(5000);
-		service.uploadDeviceConfig(Utils.parseDeviceProperties("./devices/lgG2.conf"));
+		service.uploadDeviceConfig(Utils.parseDeviceProperties("lgG2"));
 	}
 
 	@Test(dependsOnMethods = { "shouldLogin" })
@@ -161,8 +163,9 @@ public class TestGooglePlayCrawler {
 	}
 	
 	@Test
-	public void tmpTest() {
-		String args[] = new String[] {"-e", "lge.test.another@gmail.com", "-p", "lge12345", "device", "ssG3.conf"};
+	public void shouldListDevices() throws Exception {
+		String[] args = {"list-devices"};
+		gplay.operate(args);
 	}
 	
 	}

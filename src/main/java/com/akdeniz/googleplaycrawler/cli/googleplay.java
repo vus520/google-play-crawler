@@ -1,5 +1,6 @@
 package com.akdeniz.googleplaycrawler.cli;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -10,6 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.http.HttpHost;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.params.ConnRoutePNames;
@@ -18,6 +22,10 @@ import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.future.WriteFuture;
 import org.apache.mina.core.session.IoSession;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.akdeniz.googleplaycrawler.GooglePlayAPI;
 import com.akdeniz.googleplaycrawler.GooglePlayAPI.RECOMMENDATION_TYPE;
@@ -70,7 +78,7 @@ public class googleplay {
     private Namespace namespace;
 
     public static enum COMMAND {
-	LIST, DOWNLOAD, CHECKIN, CATEGORIES, SEARCH, PERMISSIONS, REVIEWS, REGISTER, USEGCM, RECOMMENDATIONS
+	LIST, DOWNLOAD, CHECKIN, CATEGORIES, SEARCH, PERMISSIONS, REVIEWS, REGISTER, USEGCM, RECOMMENDATIONS, LIST_DEVICES
     }
 
     private static final String LIST_HEADER = new StringJoiner(DELIMETER).add("Title").add("Package").add("Creator")
@@ -114,6 +122,11 @@ public class googleplay {
 	/* =================Check-In Arguments============== */
 	Subparser checkinParser = subparsers.addParser("checkin", true).description("checkin section!")
 			.setDefault("command", COMMAND.CHECKIN);
+	
+	/* =================List-Devices Arguments============== */
+	
+	Subparser listDevParser = subparsers.addParser("list-devices", true).description("list available devices")
+			.setDefault("command", COMMAND.LIST_DEVICES);
 
 	/* =================List Arguments============== */
 	Subparser listParser = subparsers.addParser("list", true)
@@ -199,6 +212,9 @@ public class googleplay {
 	    case DOWNLOAD:
 		downloadCommand();
 		break;
+	    case LIST_DEVICES:
+	    listDevicesCommand();
+	    break;
 	    case LIST:
 		listCommand();
 		break;
@@ -485,6 +501,21 @@ public class googleplay {
 	}
     }
 
+    private void listDevicesCommand() throws Exception {
+    System.out.println("List of available devices:");
+    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    DocumentBuilder db = dbf.newDocumentBuilder();
+    Document dom = db.parse(getClass().getResourceAsStream("/devices/list.xml"));
+    Element root = dom.getDocumentElement();
+    NodeList devices = root.getElementsByTagName("device");
+    for (int i = 0; i < devices.getLength(); i++) {
+    	Element el = (Element) devices.item(i);
+    	String alias = el.getAttribute("alias");
+    	String name = el.getTextContent();
+    	System.out.println(alias + " - " + name);
+    }
+    }
+    
     private void listCommand() throws Exception {
 	login();
 

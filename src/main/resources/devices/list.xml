@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<devices>
+	<device alias="lgG2"> LG G2 </device>
+	<device alias="lgG2mini"> LG G2 Mini </device>
+	<device alias="ssGS3"> Samsung Galaxy S3 </device>
+	<device alias="ssGTS"> Samsung Galaxy Tab S </device>
+</devices>
