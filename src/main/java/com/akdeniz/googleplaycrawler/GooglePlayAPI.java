@@ -70,6 +70,7 @@ public class GooglePlayAPI {
     private static final String BULKDETAILS_URL = FDFE_URL + "bulkDetails";
     private static final String PURCHASE_URL = FDFE_URL + "purchase";
     private static final String REVIEWS_URL = FDFE_URL + "rev";
+    private static final String ADDREVIEW_URL = FDFE_URL + "addReview";
     private static final String UPLOADDEVICECONFIG_URL = FDFE_URL + "uploadDeviceConfig";
     private static final String RECOMMENDATIONS_URL = FDFE_URL + "rec";
 
