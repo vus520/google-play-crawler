@@ -24,10 +24,12 @@ import com.akdeniz.googleplaycrawler.GooglePlay.DetailsResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.ListResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.Offer;
 import com.akdeniz.googleplaycrawler.GooglePlay.SearchResponse;
+import com.akdeniz.googleplaycrawler.cli.*;
 
 public class TestGooglePlayCrawler {
 
 	private static GooglePlayAPI service;
+	private static googleplay gplay;
 
 	private static HttpClient getProxiedHttpClient(String host, Integer port) throws Exception {
 		HttpClient client = new DefaultHttpClient(GooglePlayAPI.getConnectionManager());
@@ -50,15 +52,18 @@ public class TestGooglePlayCrawler {
 		String port = properties.getProperty("port");
 
 		service = new GooglePlayAPI(email, password);
+		gplay = new googleplay();
 
 		if (host != null && port != null) {
 			service.setClient(getProxiedHttpClient(host, Integer.valueOf(port)));
 		}
 	}
-
+	
 	@Test
 	public void shouldCheckin() throws Exception {
-		service.checkin();
+		// allow server to catch up after checkin...
+		Thread.sleep(5000);
+		service.checkin(Utils.parseDeviceProperties("lgG2"));
 	}
 
 	@Test(dependsOnMethods = { "shouldCheckin" })
@@ -67,10 +72,12 @@ public class TestGooglePlayCrawler {
 		Thread.sleep(5000);
 		service.login();
 	}
-
+	
 	@Test(dependsOnMethods = { "shouldLogin" })
 	public void shouldUploadDeviceConfiguration() throws Exception {
-		service.uploadDeviceConfig();
+		// allow server to catch up after previous upload...
+		Thread.sleep(5000);
+		service.uploadDeviceConfig(Utils.parseDeviceProperties("lgG2"));
 	}
 
 	@Test(dependsOnMethods = { "shouldLogin" })
@@ -154,4 +161,12 @@ public class TestGooglePlayCrawler {
 		downloadStream.close();
 		outputStream.close();
 	}
-}
+	
+	@Test
+	public void shouldListDevices() throws Exception {
+		String[] args = {"list-devices"};
+		gplay.operate(args);
+	}
+	
+	}
+
