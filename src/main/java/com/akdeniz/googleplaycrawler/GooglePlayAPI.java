@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,6 +34,7 @@ import com.akdeniz.googleplaycrawler.GooglePlay.BulkDetailsRequest.Builder;
 import com.akdeniz.googleplaycrawler.GooglePlay.BulkDetailsResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.BuyResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.DetailsResponse;
+import com.akdeniz.googleplaycrawler.GooglePlay.DeviceConfigurationProto;
 import com.akdeniz.googleplaycrawler.GooglePlay.HttpCookie;
 import com.akdeniz.googleplaycrawler.GooglePlay.ListResponse;
 import com.akdeniz.googleplaycrawler.GooglePlay.ResponseWrapper;
@@ -70,6 +72,7 @@ public class GooglePlayAPI {
     private static final String BULKDETAILS_URL = FDFE_URL + "bulkDetails";
     private static final String PURCHASE_URL = FDFE_URL + "purchase";
     private static final String REVIEWS_URL = FDFE_URL + "rev";
+    private static final String ADDREVIEW_URL = FDFE_URL + "addReview";
     private static final String UPLOADDEVICECONFIG_URL = FDFE_URL + "uploadDeviceConfig";
     private static final String RECOMMENDATIONS_URL = FDFE_URL + "rec";
 
@@ -150,16 +153,23 @@ public class GooglePlayAPI {
      * {@link AndroidCheckinResponse} instance.
      * 
      */
-    public AndroidCheckinResponse checkin() throws Exception {
+    public AndroidCheckinResponse checkin(Properties device) throws Exception {
 
 	// this first checkin is for generating android-id
-	AndroidCheckinResponse checkinResponse = postCheckin(Utils.generateAndroidCheckinRequest().toByteArray());
+	AndroidCheckinResponse checkinResponse = postCheckin(Utils.generateDefaultAndroidCheckinRequest().toByteArray());
 	this.setAndroidID(BigInteger.valueOf(checkinResponse.getAndroidId()).toString(16));
 	setSecurityToken((BigInteger.valueOf(checkinResponse.getSecurityToken()).toString(16)));
 
 	String c2dmAuth = loginAC2DM();
-
-	AndroidCheckinRequest.Builder checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest());
+	
+	AndroidCheckinRequest.Builder checkInbuilder;
+	String defFlag = device.getProperty("default");
+	if ((defFlag != null) && (defFlag.equals("true"))) {
+	checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateDefaultAndroidCheckinRequest());
+	}
+	else {
+	checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest(device));
+	}
 
 	AndroidCheckinRequest build = checkInbuilder.setId(new BigInteger(this.getAndroidID(), 16).longValue())
 		.setSecurityToken(new BigInteger(getSecurityToken(), 16).longValue()).addAccountCookie("[" + getEmail() + "]")
@@ -379,10 +389,18 @@ public class GooglePlayAPI {
      * 
      * @see https://play.google.com/store/account
      */
-    public UploadDeviceConfigResponse uploadDeviceConfig() throws Exception {
+    public UploadDeviceConfigResponse uploadDeviceConfig(Properties device) throws Exception {
 
-	UploadDeviceConfigRequest request = UploadDeviceConfigRequest.newBuilder()
-		.setDeviceConfiguration(Utils.getDeviceConfigurationProto()).build();
+	UploadDeviceConfigRequest request;
+	String defFlag = device.getProperty("default");
+	if ((defFlag != null) && (defFlag.equals("true"))) {
+	request = UploadDeviceConfigRequest.newBuilder()
+		.setDeviceConfiguration(Utils.getDefaultDeviceConfigurationProto()).build();
+	}
+	else {
+	request = UploadDeviceConfigRequest.newBuilder()
+		.setDeviceConfiguration(Utils.getDeviceConfigurationProto(device)).build();
+	}
 	ResponseWrapper responseWrapper = executePOSTRequest(UPLOADDEVICECONFIG_URL, request.toByteArray(),
 		"application/x-protobuf");
 	return responseWrapper.getPayload().getUploadDeviceConfigResponse();

@@ -1,6 +1,8 @@
 package com.akdeniz.googleplaycrawler;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -14,6 +16,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 
 import javax.crypto.Cipher;
@@ -154,6 +157,48 @@ public class Utils {
 	return https;
     }
 
+    public static Properties parseDeviceProperties(String confFilename) throws Exception {
+    	String conf = "/devices/".concat(confFilename).concat(".conf");
+    	Properties properties = new Properties();
+	    properties.load(conf.getClass().getResourceAsStream(conf));
+	    return properties;
+    }
+    
+    public static AndroidCheckinRequest generateAndroidCheckinRequest(Properties properties) throws Exception {
+	return AndroidCheckinRequest.newBuilder()
+			.setId(0)
+			.setCheckin(
+					AndroidCheckinProto.newBuilder().setBuild(
+							AndroidBuildProto.newBuilder()
+							.setId(properties.getProperty("build_id"))
+							.setProduct(properties.getProperty("build_product"))
+							.setCarrier("Google")
+							.setRadio(properties.getProperty("build_radio"))
+							.setBootloader(properties.getProperty("build_bootloader"))
+							.setClient("android-google")
+							.setTimestamp(new Date().getTime() / 1000)
+							.setGoogleServices(Integer.parseInt(properties.getProperty("build_gservices")))
+							.setDevice(properties.getProperty("build_device"))
+							.setSdkVersion(Integer.parseInt(properties.getProperty("build_sdkversion")))
+							.setModel(properties.getProperty("build_model"))
+							.setManufacturer(properties.getProperty("build_manufacturer"))
+							.setBuildProduct(properties.getProperty("build_buildProduct"))
+							.setOtaInstalled(false)
+							)
+					.setLastCheckinMsec(0)
+					.setCellOperator(properties.getProperty("telephony_cellOperator"))
+					.setSimOperator(properties.getProperty("telephony_simOperator"))
+					.setRoaming(properties.getProperty("telephony_roaming"))
+					.setUserNumber(0)
+					)
+			.setLocale("en_US")
+			.setTimeZone("Europe/Istanbul")
+			.setVersion(3)
+			.setDeviceConfiguration(getDeviceConfigurationProto(properties))
+			.setFragment(0)
+			.build();
+    }
+    
     /**
      * Generates android checkin request with properties of "Galaxy S3".
      * 
@@ -162,8 +207,7 @@ public class Utils {
      * > http://www.glbenchmark.com/phonedetails.jsp?benchmark=glpro25&D=Samsung
      * +GT-I9300+Galaxy+S+III&testgroup=system </a>
      */
-    public static AndroidCheckinRequest generateAndroidCheckinRequest() {
-
+    public static AndroidCheckinRequest generateDefaultAndroidCheckinRequest() {
 	return AndroidCheckinRequest
 		.newBuilder()
 		.setId(0)
@@ -180,10 +224,30 @@ public class Utils {
 						.setBuildProduct("m0xx").setOtaInstalled(false)).setLastCheckinMsec(0)
 				.setCellOperator("310260").setSimOperator("310260").setRoaming("mobile-notroaming")
 				.setUserNumber(0)).setLocale("en_US").setTimeZone("Europe/Istanbul").setVersion(3)
-		.setDeviceConfiguration(getDeviceConfigurationProto()).setFragment(0).build();
+		.setDeviceConfiguration(getDefaultDeviceConfigurationProto()).setFragment(0).build();
     }
 
-    public static DeviceConfigurationProto getDeviceConfigurationProto() {
+    public static DeviceConfigurationProto getDeviceConfigurationProto(Properties properties) throws Exception {
+    	return DeviceConfigurationProto.newBuilder()
+    			.setTouchScreen(Integer.parseInt(properties.getProperty("device_touchScreen")))
+    			.setKeyboard(Integer.parseInt(properties.getProperty("device_keyboard")))
+    			.setNavigation(Integer.parseInt(properties.getProperty("device_navigation")))
+    			.setScreenLayout(Integer.parseInt(properties.getProperty("device_screenLayout")))
+    			.setHasHardKeyboard(Boolean.parseBoolean(properties.getProperty("device_hardKeyboard")))
+    			.setHasFiveWayNavigation(Boolean.parseBoolean(properties.getProperty("device_fiveWayNavigation")))
+    			.setScreenWidth(Integer.parseInt(properties.getProperty("display_screenWidth")))
+    			.setScreenHeight(Integer.parseInt(properties.getProperty("display_screenHeight")))
+    			.setScreenDensity(Integer.parseInt(properties.getProperty("display_screenDensity")))
+    			.setGlEsVersion(Integer.parseInt(properties.getProperty("gl_version")))
+    			.addAllSystemSharedLibrary(Arrays.asList(properties.getProperty("system_libraries").split(", ")))
+    			.addAllSystemAvailableFeature(Arrays.asList(properties.getProperty("system_features").split(", ")))
+    			.addAllNativePlatform(Arrays.asList(properties.getProperty("build_platforms").split(", ")))
+    			.addAllSystemSupportedLocale(Arrays.asList(properties.getProperty("system_locales").split(", ")))
+    			.addAllGlExtension(Arrays.asList(properties.getProperty("gl_extensions").split(", ")))
+    			.build();
+    }
+    
+    public static DeviceConfigurationProto getDefaultDeviceConfigurationProto() {
 	return DeviceConfigurationProto
 		.newBuilder()
 		.setTouchScreen(3)
