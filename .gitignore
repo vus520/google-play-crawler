@@ -1,5 +1,5 @@
 target/
 .idea/
 *.iml
-src/main/java/com/akdeniz/googleplaycrawler/GooglePlay.java
-src/main/java/com/akdeniz/googleplaycrawler/gsf/GoogleServicesFramework.java
+#src/main/java/com/akdeniz/googleplaycrawler/GooglePlay.java
+#src/main/java/com/akdeniz/googleplaycrawler/gsf/GoogleServicesFramework.java
