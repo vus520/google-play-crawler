@@ -630,6 +630,8 @@ public class googleplay {
         AppDetails appDetails = details.getDocV2().getDetails().getAppDetails();
         Offer offer = details.getDocV2().getOffer(0);
 
+        //System.out.println(details.toString());
+
         int versionCode = appDetails.getVersionCode();
         long installationSize = appDetails.getInstallationSize();
         int offerType = offer.getOfferType();
@@ -641,7 +643,7 @@ public class googleplay {
             return;
         }
 
-        System.out.println("Downloading..." + appDetails.getPackageName() + " : " + installationSize + " bytes");
+        System.out.println("Downloading..." + appDetails.getPackageName() + "\nvcode:" + versionCode + "\nsize:" + installationSize + " bytes");
         InputStream downloadStream = service.download(appDetails.getPackageName(), versionCode, offerType);
 
         FileOutputStream outputStream = new FileOutputStream(appDetails.getPackageName() + ".apk");
