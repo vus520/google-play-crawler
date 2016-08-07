@@ -432,7 +432,6 @@ public class googleplay {
             androidid = properties.getProperty("androidid");
             email = properties.getProperty("email");
             password = properties.getProperty("password");
-            // TODO: 可能是切换国家的地方
             localization = properties.getProperty("localization");
 
             if (androidid != null && email != null && password != null) {

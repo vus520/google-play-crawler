@@ -216,10 +216,13 @@ public class GooglePlayAPI {
      */
     public void login() throws Exception {
 
-        HttpEntity responseEntity = executePost(URL_LOGIN, new String[][]{{"Email", this.getEmail()}, {"Passwd", this.password},
-                {"service", "androidmarket"}, {"accountType", ACCOUNT_TYPE_HOSTED_OR_GOOGLE}, {"has_permission", "1"},
-                {"source", "android"}, {"androidId", this.getAndroidID()}, {"app", "com.android.vending"},
-                {"device_country", "en"}, {"lang", "en"}, {"sdk_version", "16"}, {"client_sig", "38918a453d07199354f8b19af05ec6562ced5788"},}, null);
+        HttpEntity responseEntity = executePost(URL_LOGIN, new String[][]{
+                {"Email", this.getEmail()}, {"Passwd", this.password},
+                {"service", "androidmarket"}, {"accountType", ACCOUNT_TYPE_HOSTED_OR_GOOGLE},
+                {"has_permission", "1"}, {"source", "android"},
+                {"androidId", this.getAndroidID()}, {"app", "com.android.vending"},
+                {"device_country", "en"}, {"lang", "en"}, {"sdk_version", "22"},
+                {"client_sig", "38918a453d07199354f8b19af05ec6562ced5788"},}, null);
 
         Map<String, String> response = Utils.parseResponse(new String(Utils.readAll(responseEntity.getContent())));
         if (response.containsKey("Auth")) {
@@ -552,31 +555,31 @@ public class GooglePlayAPI {
     private String[][] getHeaderParameters(String token, String contentType, String sdk) {
 
         Map<String, String> sdkMap = new HashMap<>();
-        sdkMap.put("10", "2.3.3");
-        sdkMap.put("11", "3.0");
-        sdkMap.put("12", "3.1");
-        sdkMap.put("13", "3.2");
-        sdkMap.put("14", "4.0");
-        sdkMap.put("15", "4.0.3");
-        sdkMap.put("16", "4.1");
-        sdkMap.put("17", "4.2");
-        sdkMap.put("18", "4.3");
-        sdkMap.put("19", "4.4");
-        sdkMap.put("20", "4.4");
-        sdkMap.put("21", "5.0");
-        sdkMap.put("22", "6.0.0");
+        sdkMap.put("10", "2.3.3 Gingerbread");
+        sdkMap.put("11", "3.0 Honeycomb");
+        sdkMap.put("12", "3.1 Honeycomb");
+        sdkMap.put("13", "3.2 Honeycomb");
+        sdkMap.put("14", "4.0 Ice Cream Sandwich");
+        sdkMap.put("15", "4.0.3 Ice Cream Sandwich");
+        sdkMap.put("16", "4.1 Jelly Bean");
+        sdkMap.put("17", "4.2 Jelly Bean");
+        sdkMap.put("18", "4.3 Jelly Bean");
+        sdkMap.put("19", "4.4 KitKat");
+        sdkMap.put("20", "4.4W");
+        sdkMap.put("21", "5.0 Lollipop");
+        sdkMap.put("22", "5.1 Lollipop");
+        sdkMap.put("23", "6.0 Marshmallow");
+        sdkMap.put("24", "7.0 Nougat");
         return new String[][]{
                 {"Accept-Language", getLocalization() != null ? getLocalization() : "en-EN"},
                 {"Authorization", "GoogleLogin auth=" + token},
                 {"X-DFE-Enabled-Experiments", "cl:billing.select_add_instrument_by_default"},
-                {
-                        "X-DFE-Unsupported-Experiments",
-                        "nocache:billing.use_charging_poller,market_emails,buyer_currency,prod_baseline,checkin.set_asset_paid_app_field,shekel_test,content_ratings,buyer_currency_in_app,nocache:encrypted_apk,recent_changes"},
+                {"X-DFE-Unsupported-Experiments", "nocache:billing.use_charging_poller,market_emails,buyer_currency,prod_baseline,checkin.set_asset_paid_app_field,shekel_test,content_ratings,buyer_currency_in_app,nocache:encrypted_apk,recent_changes"},
                 {"X-DFE-Device-Id", this.getAndroidID()},
                 {"X-DFE-Client-Id", "am-android-google"},
-                {"User-Agent",
-                        "Android-Finsky/" + sdkMap.get(sdk) + " (api=" + sdkMap.get(sdk) + ",versionCode=8016014,sdk=" + sdk + ",device=GT-I9300,hardware=aries,product=GT-I9300)"},
-                {"X-DFE-SmallestScreenWidthDp", "320"}, {"X-DFE-Filter-Level", "3"},
+                {"User-Agent", "Android-Finsky/" + sdkMap.get(sdk) + " (api=" + sdkMap.get(sdk) + ",versionCode=8016014,sdk=" + sdk + ",device=GT-I9300,hardware=aries,product=GT-I9300)"},
+                {"X-DFE-SmallestScreenWidthDp", "320"},
+                {"X-DFE-Filter-Level", "3"},
                 {"Host", "android.clients.google.com"},
                 {"Content-Type", (contentType != null) ? contentType : "application/x-www-form-urlencoded; charset=UTF-8"}};
     }
