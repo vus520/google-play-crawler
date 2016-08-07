@@ -107,10 +107,10 @@ public class googleplay {
         parser.addArgument("-a", "--host").nargs("?").help("Proxy host").setDefault(FeatureControl.SUPPRESS);
         parser.addArgument("-l", "--port").type(Integer.class).nargs("?").help("Proxy port")
                 .setDefault(FeatureControl.SUPPRESS);
-        parser.addArgument("-k", "--sdk").type(Integer.class).nargs("?").help("specify the sdk version to download apk file")
-                .setDefault(22);
+        parser.addArgument("-k", "--sdk").nargs("?").help("specify the sdk version to download apk file")
+                .setDefault("5.0.0");
         parser.addArgument("-v", "--debug").nargs("?").help("debug mode, print some debug string")
-                .setDefault("");
+                .setDefault(FeatureControl.SUPPRESS);
 
         Subparsers subparsers = parser.addSubparsers().description("Command to be executed.");
 
@@ -640,15 +640,16 @@ public class googleplay {
         Offer offer = details.getDocV2().getOffer(0);
 
         //指定设备sdk版本
-        Integer sdk = namespace.getInt("sdk");
+        String sdk = namespace.getString("sdk");
         service.setSdk(sdk);
 
         //开启debug mode
-        String debug = (String) namespace.getString("debug");
-        System.out.println("debug:" + debug);
+        String debuginfo = namespace.getString("debug");
+        boolean debug = debuginfo != null;
+        service.setDebug(debug);
 
-        service.setDebug(debug.length() > 0);
-        if(debug.length() > 0) System.out.println(details.toString());
+        if(debug)
+            System.out.println(details.toString());
 
         int versionCode = appDetails.getVersionCode();
         long installationSize = appDetails.getInstallationSize();

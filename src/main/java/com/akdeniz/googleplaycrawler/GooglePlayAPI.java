@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.akdeniz.googleplaycrawler.misc.Sdklists;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -105,7 +106,7 @@ public class GooglePlayAPI {
     private HttpClient client;
     private String securityToken;
     private String localization;
-    private Integer sdk;
+    private String sdk;
     private Boolean debug;
 
     /**
@@ -362,6 +363,9 @@ public class GooglePlayAPI {
      */
     private BuyResponse purchase(String packageName, int versionCode, int offerType) throws IOException {
 
+        if(this.debug)
+            System.out.println(PURCHASE_URL);
+
         ResponseWrapper responseWrapper = executePOSTRequest(PURCHASE_URL, new String[][]{{"ot", String.valueOf(offerType)},
                 {"doc", packageName}, {"vc", String.valueOf(versionCode)},});
 
@@ -565,7 +569,7 @@ public class GooglePlayAPI {
      * given, default one is used!
      */
     private String[][] getHeaderParameters(String token, String contentType) {
-
+        
         return new String[][]{
                 {"Accept-Language", getLocalization() != null ? getLocalization() : "en-EN"},
                 {"Authorization", "GoogleLogin auth=" + token},
@@ -596,9 +600,9 @@ public class GooglePlayAPI {
 
     public void setAndroidID(String androidID) { this.androidID = androidID; }
 
-    public void setSdk(int sdk) { this.sdk = sdk; }
+    public void setSdk(String sdk) { this.sdk = sdk; }
 
-    public void setDebug(boolean debug) { this.debug = debug ? Boolean.TRUE : Boolean.FALSE; }
+    public void setDebug(boolean debug) { this.debug = debug; }
 
     public String getSecurityToken() {
         return securityToken;
