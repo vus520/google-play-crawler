@@ -105,6 +105,8 @@ public class GooglePlayAPI {
     private HttpClient client;
     private String securityToken;
     private String localization;
+    private Integer sdk;
+    private Boolean debug;
 
     /**
      * Default constructor. ANDROID ID and Authentication token must be supplied
@@ -323,12 +325,20 @@ public class GooglePlayAPI {
      **/
     public InputStream download(String packageName, int versionCode, int offerType) throws IOException {
 
+        if(this.debug)
+            System.out.println("start purchase " + packageName + "\n");
+
         BuyResponse buyResponse = purchase(packageName, versionCode, offerType);
 
         AndroidAppDeliveryData appDeliveryData = buyResponse.getPurchaseStatusResponse().getAppDeliveryData();
 
         String downloadUrl = appDeliveryData.getDownloadUrl();
         HttpCookie downloadAuthCookie = appDeliveryData.getDownloadAuthCookie(0);
+
+        if(this.debug) {
+            System.out.println("downloadUrl:" + downloadUrl);
+            System.out.println("downloadAuthCookie:" + downloadAuthCookie);
+        }
 
         return executeDownload(downloadUrl, downloadAuthCookie.getName() + "=" + downloadAuthCookie.getValue());
 
@@ -364,9 +374,11 @@ public class GooglePlayAPI {
     public InputStream executeDownload(String url, String cookie) throws IOException {
 
         String[][] headerParams = new String[][]{{"Cookie", cookie},
-                {"User-Agent", "AndroidDownloadManager/4.1.1 (Linux; U; Android 4.1.1; Nexus S Build/JRO03E)"},};
-        String ua = "User-Agent: AndroidDownloadManager/4.1.1 (Linux; U; Android 4.1.1; Nexus S Build/JRO03E)";
-        System.out.println("curl -IL \"" + url + "\" -H \"" + ua + "\"" + " -H \"Cookie: " + cookie + "\"");
+                {"User-Agent", "AndroidDownloadManager/6.0.0 (Linux; U; Android 6.0.0; Nexus S Build/JRO03E)"},};
+        String ua = "User-Agent: AndroidDownloadManager/6.0.0 (Linux; U; Android 6.0.0; Nexus S Build/JRO03E)";
+
+        if(this.debug)
+            System.out.println("curl -L \"" + url + "\" -H \"" + ua + "\"" + " -H \"Cookie: " + cookie + "\" > tmp.apk");
 
         HttpEntity httpEntity = executeGet(url, null, headerParams);
         return httpEntity.getContent();
@@ -582,9 +594,11 @@ public class GooglePlayAPI {
         return androidID;
     }
 
-    public void setAndroidID(String androidID) {
-        this.androidID = androidID;
-    }
+    public void setAndroidID(String androidID) { this.androidID = androidID; }
+
+    public void setSdk(int sdk) { this.sdk = sdk; }
+
+    public void setDebug(boolean debug) { this.debug = debug ? Boolean.TRUE : Boolean.FALSE; }
 
     public String getSecurityToken() {
         return securityToken;
