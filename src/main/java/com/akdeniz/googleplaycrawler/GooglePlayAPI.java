@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -48,16 +49,15 @@ import com.akdeniz.googleplaycrawler.GooglePlay.UploadDeviceConfigResponse;
  * <code>checkin, search, details, bulkDetails, browse, list and download</code>
  * capabilities. It uses <code>Apache Commons HttpClient</code> for POST and GET
  * requests.
- * 
+ * <p>
  * <p>
  * <b>XXX : DO NOT call checkin, login and download consecutively. To allow
  * server to catch up, sleep for a while before download! (5 sec will do!) Also
  * it is recommended to call checkin once and use generated android-id for
  * further operations.</b>
  * </p>
- * 
+ *
  * @author akdeniz
- * 
  */
 public class GooglePlayAPI {
 
@@ -79,23 +79,23 @@ public class GooglePlayAPI {
     private static final String ACCOUNT_TYPE_HOSTED_OR_GOOGLE = "HOSTED_OR_GOOGLE";
 
     public static enum REVIEW_SORT {
-	NEWEST(0), HIGHRATING(1), HELPFUL(2);
+        NEWEST(0), HIGHRATING(1), HELPFUL(2);
 
-	public int value;
+        public int value;
 
-	private REVIEW_SORT(int value) {
-	    this.value = value;
-	}
+        private REVIEW_SORT(int value) {
+            this.value = value;
+        }
     }
-    
+
     public static enum RECOMMENDATION_TYPE {
-	ALSO_VIEWED(1), ALSO_INSTALLED(2);
+        ALSO_VIEWED(1), ALSO_INSTALLED(2);
 
-	public int value;
+        public int value;
 
-	private RECOMMENDATION_TYPE(int value) {
-	    this.value = value;
-	}
+        private RECOMMENDATION_TYPE(int value) {
+            this.value = value;
+        }
     }
 
     private String token;
@@ -117,8 +117,8 @@ public class GooglePlayAPI {
      * Constructs a ready to login {@link GooglePlayAPI}.
      */
     public GooglePlayAPI(String email, String password, String androidID) {
-	this(email, password);
-	this.setAndroidID(androidID);
+        this(email, password);
+        this.setAndroidID(androidID);
     }
 
     /**
@@ -127,82 +127,81 @@ public class GooglePlayAPI {
      * using other abilities.
      */
     public GooglePlayAPI(String email, String password) {
-	this.setEmail(email);
-	this.password = password;
-	setClient(new DefaultHttpClient(getConnectionManager()));
+        this.setEmail(email);
+        this.password = password;
+        setClient(new DefaultHttpClient(getConnectionManager()));
     }
 
     /**
      * Connection manager to allow concurrent connections.
+     *
      * @return {@link ClientConnectionManager} instance
      */
     public static ClientConnectionManager getConnectionManager() {
-	PoolingClientConnectionManager connManager = 
-		new PoolingClientConnectionManager( SchemeRegistryFactory.createDefault());
-	connManager.setMaxTotal(100);
-	connManager.setDefaultMaxPerRoute(30);
-	return connManager;
+        PoolingClientConnectionManager connManager =
+                new PoolingClientConnectionManager(SchemeRegistryFactory.createDefault());
+        connManager.setMaxTotal(100);
+        connManager.setDefaultMaxPerRoute(30);
+        return connManager;
     }
 
     /**
      * Performs authentication on "ac2dm" service and match up android id,
      * security token and email by checking them in on this server.
-     * 
+     * <p>
      * This function sets check-inded android ID and that can be taken either by
      * using <code>getToken()</code> or from returned
      * {@link AndroidCheckinResponse} instance.
-     * 
      */
     public AndroidCheckinResponse checkin(Properties device) throws Exception {
 
-	// this first checkin is for generating android-id
-	AndroidCheckinResponse checkinResponse = postCheckin(Utils.generateDefaultAndroidCheckinRequest().toByteArray());
-	this.setAndroidID(BigInteger.valueOf(checkinResponse.getAndroidId()).toString(16));
-	setSecurityToken((BigInteger.valueOf(checkinResponse.getSecurityToken()).toString(16)));
+        // this first checkin is for generating android-id
+        AndroidCheckinResponse checkinResponse = postCheckin(Utils.generateDefaultAndroidCheckinRequest().toByteArray());
+        this.setAndroidID(BigInteger.valueOf(checkinResponse.getAndroidId()).toString(16));
+        setSecurityToken((BigInteger.valueOf(checkinResponse.getSecurityToken()).toString(16)));
 
-	String c2dmAuth = loginAC2DM();
-	
-	AndroidCheckinRequest.Builder checkInbuilder;
-	String defFlag = device.getProperty("default");
-	if ((defFlag != null) && (defFlag.equals("true"))) {
-	checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateDefaultAndroidCheckinRequest());
-	}
-	else {
-	checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest(device));
-	}
+        String c2dmAuth = loginAC2DM();
 
-	AndroidCheckinRequest build = checkInbuilder.setId(new BigInteger(this.getAndroidID(), 16).longValue())
-		.setSecurityToken(new BigInteger(getSecurityToken(), 16).longValue()).addAccountCookie("[" + getEmail() + "]")
-		.addAccountCookie(c2dmAuth).build();
-	// this is the second checkin to match credentials with android-id
-	return postCheckin(build.toByteArray());
+        AndroidCheckinRequest.Builder checkInbuilder;
+        String defFlag = device.getProperty("default");
+        if ((defFlag != null) && (defFlag.equals("true"))) {
+            checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateDefaultAndroidCheckinRequest());
+        } else {
+            checkInbuilder = AndroidCheckinRequest.newBuilder(Utils.generateAndroidCheckinRequest(device));
+        }
+
+        AndroidCheckinRequest build = checkInbuilder.setId(new BigInteger(this.getAndroidID(), 16).longValue())
+                .setSecurityToken(new BigInteger(getSecurityToken(), 16).longValue()).addAccountCookie("[" + getEmail() + "]")
+                .addAccountCookie(c2dmAuth).build();
+        // this is the second checkin to match credentials with android-id
+        return postCheckin(build.toByteArray());
     }
-    
+
     /**
      * Logins AC2DM server and returns authentication string.
-     *
      * <p>
-     * client_sig is SHA1 digest of encoded certificate on 
-     * <i>GoogleLoginService(package name : com.google.android.gsf)</i> system APK. 
-     * But google doesn't seem to care of value of this parameter. 
+     * <p>
+     * client_sig is SHA1 digest of encoded certificate on
+     * <i>GoogleLoginService(package name : com.google.android.gsf)</i> system APK.
+     * But google doesn't seem to care of value of this parameter.
      */
-    public String loginAC2DM() throws IOException{
-	HttpEntity c2dmResponseEntity = executePost(URL_LOGIN, new String[][] { { "Email", this.getEmail() },
-		{ "Passwd", this.password }, { "service", "ac2dm" }, { "accountType", ACCOUNT_TYPE_HOSTED_OR_GOOGLE },
-		{ "has_permission", "1" }, { "source", "android" }, { "app", "com.google.android.gsf" },
-		{ "device_country", "us" }, { "device_country", "us" }, { "lang", "en" }, { "sdk_version", "16" }, { "client_sig", "38918a453d07199354f8b19af05ec6562ced5788" }, }, null);
+    public String loginAC2DM() throws IOException {
+        HttpEntity c2dmResponseEntity = executePost(URL_LOGIN, new String[][]{{"Email", this.getEmail()},
+                {"Passwd", this.password}, {"service", "ac2dm"}, {"accountType", ACCOUNT_TYPE_HOSTED_OR_GOOGLE},
+                {"has_permission", "1"}, {"source", "android"}, {"app", "com.google.android.gsf"},
+                {"device_country", "us"}, {"device_country", "us"}, {"lang", "en"}, {"sdk_version", "16"}, {"client_sig", "38918a453d07199354f8b19af05ec6562ced5788"},}, null);
 
-	Map<String, String> c2dmAuth = Utils.parseResponse(new String(Utils.readAll(c2dmResponseEntity.getContent())));
-	return c2dmAuth.get("Auth");
+        Map<String, String> c2dmAuth = Utils.parseResponse(new String(Utils.readAll(c2dmResponseEntity.getContent())));
+        return c2dmAuth.get("Auth");
 
     }
-    
-    public Map<String, String> c2dmRegister(String application, String sender) throws IOException{
-	
-	String c2dmAuth = loginAC2DM();
-	String[][]  data = new String[][]{{"app", application},{"sender", sender}, {"device", new BigInteger(this.getAndroidID(), 16).toString()}};
-	HttpEntity responseEntity = executePost(C2DM_REGISTER_URL, data, getHeaderParameters(c2dmAuth, null));
-	return Utils.parseResponse(new String(Utils.readAll(responseEntity.getContent())));
+
+    public Map<String, String> c2dmRegister(String application, String sender) throws IOException {
+
+        String c2dmAuth = loginAC2DM();
+        String[][] data = new String[][]{{"app", application}, {"sender", sender}, {"device", new BigInteger(this.getAndroidID(), 16).toString()}};
+        HttpEntity responseEntity = executePost(C2DM_REGISTER_URL, data, getHeaderParameters(c2dmAuth, null));
+        return Utils.parseResponse(new String(Utils.readAll(responseEntity.getContent())));
     }
 
     /**
@@ -210,7 +209,7 @@ public class GooglePlayAPI {
      * authentication, it simply sets authentication token.
      */
     public void login(String token) throws Exception {
-	setToken(token);
+        setToken(token);
     }
 
     /**
@@ -220,24 +219,24 @@ public class GooglePlayAPI {
      */
     public void login() throws Exception {
 
-	HttpEntity responseEntity = executePost(URL_LOGIN, new String[][] { { "Email", this.getEmail() }, { "Passwd", this.password },
-		{ "service", "androidmarket" }, { "accountType", ACCOUNT_TYPE_HOSTED_OR_GOOGLE }, { "has_permission", "1" },
-		{ "source", "android" }, { "androidId", this.getAndroidID() }, { "app", "com.android.vending" },
-		{ "device_country", "en" }, { "lang", "en" }, { "sdk_version", "16" }, { "client_sig", "38918a453d07199354f8b19af05ec6562ced5788" }, }, null);
+        HttpEntity responseEntity = executePost(URL_LOGIN, new String[][]{{"Email", this.getEmail()}, {"Passwd", this.password},
+                {"service", "androidmarket"}, {"accountType", ACCOUNT_TYPE_HOSTED_OR_GOOGLE}, {"has_permission", "1"},
+                {"source", "android"}, {"androidId", this.getAndroidID()}, {"app", "com.android.vending"},
+                {"device_country", "en"}, {"lang", "en"}, {"sdk_version", "16"}, {"client_sig", "38918a453d07199354f8b19af05ec6562ced5788"},}, null);
 
-	Map<String, String> response = Utils.parseResponse(new String(Utils.readAll(responseEntity.getContent())));
-	if (response.containsKey("Auth")) {
-	    setToken(response.get("Auth"));
-	} else {
-	    throw new GooglePlayException("Authentication failed!");
-	}
+        Map<String, String> response = Utils.parseResponse(new String(Utils.readAll(responseEntity.getContent())));
+        if (response.containsKey("Auth")) {
+            setToken(response.get("Auth"));
+        } else {
+            throw new GooglePlayException("Authentication failed!");
+        }
     }
 
     /**
      * Equivalent of <code>search(query, null, null)</code>
      */
     public SearchResponse search(String query) throws IOException {
-	return search(query, null, null);
+        return search(query, null, null);
     }
 
     /**
@@ -246,11 +245,11 @@ public class GooglePlayAPI {
      */
     public SearchResponse search(String query, Integer offset, Integer numberOfResult) throws IOException {
 
-	ResponseWrapper responseWrapper = executeGETRequest(SEARCH_URL,
-		new String[][] { { "c", "3" }, { "q", query }, { "o", (offset == null) ? null : String.valueOf(offset) },
-			{ "n", (numberOfResult == null) ? null : String.valueOf(numberOfResult) }, });
+        ResponseWrapper responseWrapper = executeGETRequest(SEARCH_URL,
+                new String[][]{{"c", "3"}, {"q", query}, {"o", (offset == null) ? null : String.valueOf(offset)},
+                        {"n", (numberOfResult == null) ? null : String.valueOf(numberOfResult)},});
 
-	return responseWrapper.getPayload().getSearchResponse();
+        return responseWrapper.getPayload().getSearchResponse();
     }
 
     /**
@@ -259,35 +258,39 @@ public class GooglePlayAPI {
      * <code>bulkDetails</code>.
      */
     public DetailsResponse details(String packageName) throws IOException {
-	ResponseWrapper responseWrapper = executeGETRequest(DETAILS_URL, new String[][] { { "doc", packageName }, });
+        ResponseWrapper responseWrapper = executeGETRequest(DETAILS_URL, new String[][]{{"doc", packageName},});
 
-	return responseWrapper.getPayload().getDetailsResponse();
+        return responseWrapper.getPayload().getDetailsResponse();
     }
 
-    /** Equivalent of details but bulky one! */
+    /**
+     * Equivalent of details but bulky one!
+     */
     public BulkDetailsResponse bulkDetails(List<String> packageNames) throws IOException {
 
-	Builder bulkDetailsRequestBuilder = BulkDetailsRequest.newBuilder();
-	bulkDetailsRequestBuilder.addAllDocid(packageNames);
+        Builder bulkDetailsRequestBuilder = BulkDetailsRequest.newBuilder();
+        bulkDetailsRequestBuilder.addAllDocid(packageNames);
 
-	ResponseWrapper responseWrapper = executePOSTRequest(BULKDETAILS_URL, bulkDetailsRequestBuilder.build().toByteArray(),
-		"application/x-protobuf");
+        ResponseWrapper responseWrapper = executePOSTRequest(BULKDETAILS_URL, bulkDetailsRequestBuilder.build().toByteArray(),
+                "application/x-protobuf");
 
-	return responseWrapper.getPayload().getBulkDetailsResponse();
+        return responseWrapper.getPayload().getBulkDetailsResponse();
     }
 
-    /** Fetches available categories */
+    /**
+     * Fetches available categories
+     */
     public BrowseResponse browse() throws IOException {
 
-	return browse(null, null);
+        return browse(null, null);
     }
 
     public BrowseResponse browse(String categoryId, String subCategoryId) throws IOException {
 
-	ResponseWrapper responseWrapper = executeGETRequest(BROWSE_URL, new String[][] { { "c", "3" }, { "cat", categoryId },
-		{ "ctr", subCategoryId } });
+        ResponseWrapper responseWrapper = executeGETRequest(BROWSE_URL, new String[][]{{"c", "3"}, {"cat", categoryId},
+                {"ctr", subCategoryId}});
 
-	return responseWrapper.getPayload().getBrowseResponse();
+        return responseWrapper.getPayload().getBrowseResponse();
     }
 
     /**
@@ -295,23 +298,23 @@ public class GooglePlayAPI {
      * sub-categories of given category!
      */
     public ListResponse list(String categoryId) throws IOException {
-	return list(categoryId, null, null, null);
+        return list(categoryId, null, null, null);
     }
 
     /**
      * Fetches applications within supplied category and sub-category. If
      * <code>null</code> is given for sub-category, it fetches sub-categories of
      * passed category.
-     * 
+     * <p>
      * Default values for offset and numberOfResult are "0" and "20"
      * respectively. These values are determined by Google Play Store.
      */
     public ListResponse list(String categoryId, String subCategoryId, Integer offset, Integer numberOfResult) throws IOException {
-	ResponseWrapper responseWrapper = executeGETRequest(LIST_URL, new String[][] { { "c", "3" }, { "cat", categoryId },
-		{ "ctr", subCategoryId }, { "o", (offset == null) ? null : String.valueOf(offset) },
-		{ "n", (numberOfResult == null) ? null : String.valueOf(numberOfResult) }, });
+        ResponseWrapper responseWrapper = executeGETRequest(LIST_URL, new String[][]{{"c", "3"}, {"cat", categoryId},
+                {"ctr", subCategoryId}, {"o", (offset == null) ? null : String.valueOf(offset)},
+                {"n", (numberOfResult == null) ? null : String.valueOf(numberOfResult)},});
 
-	return responseWrapper.getPayload().getListResponse();
+        return responseWrapper.getPayload().getListResponse();
     }
 
     /**
@@ -320,14 +323,14 @@ public class GooglePlayAPI {
      **/
     public InputStream download(String packageName, int versionCode, int offerType) throws IOException {
 
-	BuyResponse buyResponse = purchase(packageName, versionCode, offerType);
+        BuyResponse buyResponse = purchase(packageName, versionCode, offerType);
 
-	AndroidAppDeliveryData appDeliveryData = buyResponse.getPurchaseStatusResponse().getAppDeliveryData();
+        AndroidAppDeliveryData appDeliveryData = buyResponse.getPurchaseStatusResponse().getAppDeliveryData();
 
-	String downloadUrl = appDeliveryData.getDownloadUrl();
-	HttpCookie downloadAuthCookie = appDeliveryData.getDownloadAuthCookie(0);
+        String downloadUrl = appDeliveryData.getDownloadUrl();
+        HttpCookie downloadAuthCookie = appDeliveryData.getDownloadAuthCookie(0);
 
-	return executeDownload(downloadUrl, downloadAuthCookie.getName() + "=" + downloadAuthCookie.getValue());
+        return executeDownload(downloadUrl, downloadAuthCookie.getName() + "=" + downloadAuthCookie.getValue());
 
     }
 
@@ -337,10 +340,10 @@ public class GooglePlayAPI {
      */
     private AndroidCheckinResponse postCheckin(byte[] request) throws IOException {
 
-	HttpEntity httpEntity = executePost(CHECKIN_URL, new ByteArrayEntity(request), new String[][] {
-		{ "User-Agent", "Android-Checkin/2.0 (generic JRO03E); gzip" }, { "Host", "android.clients.google.com" },
-		{ "Content-Type", "application/x-protobuffer" } });
-	return AndroidCheckinResponse.parseFrom(httpEntity.getContent());
+        HttpEntity httpEntity = executePost(CHECKIN_URL, new ByteArrayEntity(request), new String[][]{
+                {"User-Agent", "Android-Checkin/2.0 (generic JRO03E); gzip"}, {"Host", "android.clients.google.com"},
+                {"Content-Type", "application/x-protobuffer"}});
+        return AndroidCheckinResponse.parseFrom(httpEntity.getContent());
     }
 
     /**
@@ -349,10 +352,10 @@ public class GooglePlayAPI {
      */
     private BuyResponse purchase(String packageName, int versionCode, int offerType) throws IOException {
 
-	ResponseWrapper responseWrapper = executePOSTRequest(PURCHASE_URL, new String[][] { { "ot", String.valueOf(offerType) },
-		{ "doc", packageName }, { "vc", String.valueOf(versionCode) }, });
+        ResponseWrapper responseWrapper = executePOSTRequest(PURCHASE_URL, new String[][]{{"ot", String.valueOf(offerType)},
+                {"doc", packageName}, {"vc", String.valueOf(versionCode)},});
 
-	return responseWrapper.getPayload().getBuyResponse();
+        return responseWrapper.getPayload().getBuyResponse();
     }
 
     /**
@@ -360,66 +363,67 @@ public class GooglePlayAPI {
      */
     public InputStream executeDownload(String url, String cookie) throws IOException {
 
-	String[][] headerParams = new String[][] { { "Cookie", cookie },
-		{ "User-Agent", "AndroidDownloadManager/4.1.1 (Linux; U; Android 4.1.1; Nexus S Build/JRO03E)" }, };
+        String[][] headerParams = new String[][]{{"Cookie", cookie},
+                {"User-Agent", "AndroidDownloadManager/4.1.1 (Linux; U; Android 4.1.1; Nexus S Build/JRO03E)"},};
+        String ua = "User-Agent: AndroidDownloadManager/4.1.1 (Linux; U; Android 4.1.1; Nexus S Build/JRO03E)";
+        System.out.println("curl -IL \"" + url + "\" -H \"" + ua + "\"" + " -H \"Cookie: " + cookie + "\"");
 
-	HttpEntity httpEntity = executeGet(url, null, headerParams);
-	return httpEntity.getContent();
+        HttpEntity httpEntity = executeGet(url, null, headerParams);
+        return httpEntity.getContent();
     }
 
     /**
      * Fetches the reviews of given package name by sorting passed choice.
-     * 
+     * <p>
      * Default values for offset and numberOfResult are "0" and "20"
      * respectively. These values are determined by Google Play Store.
      */
     public ReviewResponse reviews(String packageName, REVIEW_SORT sort, Integer offset, Integer numberOfResult)
-	    throws IOException {
-	ResponseWrapper responseWrapper = executeGETRequest(REVIEWS_URL,
-		new String[][] { { "doc", packageName }, { "sort", (sort == null) ? null : String.valueOf(sort.value) },
-			{ "o", (offset == null) ? null : String.valueOf(offset) },
-			{ "n", (numberOfResult == null) ? null : String.valueOf(numberOfResult) } });
+            throws IOException {
+        ResponseWrapper responseWrapper = executeGETRequest(REVIEWS_URL,
+                new String[][]{{"doc", packageName}, {"sort", (sort == null) ? null : String.valueOf(sort.value)},
+                        {"o", (offset == null) ? null : String.valueOf(offset)},
+                        {"n", (numberOfResult == null) ? null : String.valueOf(numberOfResult)}});
 
-	return responseWrapper.getPayload().getReviewResponse();
+        return responseWrapper.getPayload().getReviewResponse();
     }
 
     /**
      * Uploads device configuration to google server so that can be seen from
      * web as a registered device!!
-     * 
+     *
      * @see https://play.google.com/store/account
      */
     public UploadDeviceConfigResponse uploadDeviceConfig(Properties device) throws Exception {
 
-	UploadDeviceConfigRequest request;
-	String defFlag = device.getProperty("default");
-	if ((defFlag != null) && (defFlag.equals("true"))) {
-	request = UploadDeviceConfigRequest.newBuilder()
-		.setDeviceConfiguration(Utils.getDefaultDeviceConfigurationProto()).build();
-	}
-	else {
-	request = UploadDeviceConfigRequest.newBuilder()
-		.setDeviceConfiguration(Utils.getDeviceConfigurationProto(device)).build();
-	}
-	ResponseWrapper responseWrapper = executePOSTRequest(UPLOADDEVICECONFIG_URL, request.toByteArray(),
-		"application/x-protobuf");
-	return responseWrapper.getPayload().getUploadDeviceConfigResponse();
+        UploadDeviceConfigRequest request;
+        String defFlag = device.getProperty("default");
+        if ((defFlag != null) && (defFlag.equals("true"))) {
+            request = UploadDeviceConfigRequest.newBuilder()
+                    .setDeviceConfiguration(Utils.getDefaultDeviceConfigurationProto()).build();
+        } else {
+            request = UploadDeviceConfigRequest.newBuilder()
+                    .setDeviceConfiguration(Utils.getDeviceConfigurationProto(device)).build();
+        }
+        ResponseWrapper responseWrapper = executePOSTRequest(UPLOADDEVICECONFIG_URL, request.toByteArray(),
+                "application/x-protobuf");
+        return responseWrapper.getPayload().getUploadDeviceConfigResponse();
     }
-    
+
     /**
      * Fetches the recommendations of given package name.
-     * 
+     * <p>
      * Default values for offset and numberOfResult are "0" and "20"
      * respectively. These values are determined by Google Play Store.
      */
     public ListResponse recommendations(String packageName, RECOMMENDATION_TYPE type, Integer offset, Integer numberOfResult)
-	    throws IOException {
-	ResponseWrapper responseWrapper = executeGETRequest(RECOMMENDATIONS_URL,
-		new String[][] { { "c", "3" }, { "doc", packageName }, { "rt", (type == null) ? null : String.valueOf(type.value) },
-			{ "o", (offset == null) ? null : String.valueOf(offset) },
-			{ "n", (numberOfResult == null) ? null : String.valueOf(numberOfResult) } });
+            throws IOException {
+        ResponseWrapper responseWrapper = executeGETRequest(RECOMMENDATIONS_URL,
+                new String[][]{{"c", "3"}, {"doc", packageName}, {"rt", (type == null) ? null : String.valueOf(type.value)},
+                        {"o", (offset == null) ? null : String.valueOf(offset)},
+                        {"n", (numberOfResult == null) ? null : String.valueOf(numberOfResult)}});
 
-	return responseWrapper.getPayload().getListResponse();
+        return responseWrapper.getPayload().getListResponse();
     }
 
     /* =======================Helper Functions====================== */
@@ -427,26 +431,26 @@ public class GooglePlayAPI {
     /**
      * Executes GET request and returns result as {@link ResponseWrapper}.
      * Standard header parameters will be used for request.
-     * 
+     *
      * @see getHeaderParameters
-     * */
+     */
     private ResponseWrapper executeGETRequest(String path, String[][] datapost) throws IOException {
 
-	HttpEntity httpEntity = executeGet(path, datapost, getHeaderParameters(this.getToken(),null));
-	return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
+        HttpEntity httpEntity = executeGet(path, datapost, getHeaderParameters(this.getToken(), null));
+        return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
 
     }
 
     /**
      * Executes POST request and returns result as {@link ResponseWrapper}.
      * Standard header parameters will be used for request.
-     * 
+     *
      * @see getHeaderParameters
-     * */
+     */
     private ResponseWrapper executePOSTRequest(String path, String[][] datapost) throws IOException {
 
-	HttpEntity httpEntity = executePost(path, datapost, getHeaderParameters(this.getToken(), null));
-	return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
+        HttpEntity httpEntity = executePost(path, datapost, getHeaderParameters(this.getToken(), null));
+        return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
 
     }
 
@@ -456,8 +460,8 @@ public class GooglePlayAPI {
      */
     private ResponseWrapper executePOSTRequest(String url, byte[] datapost, String contentType) throws IOException {
 
-	HttpEntity httpEntity = executePost(url, new ByteArrayEntity(datapost), getHeaderParameters(this.getToken(), contentType));
-	return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
+        HttpEntity httpEntity = executePost(url, new ByteArrayEntity(datapost), getHeaderParameters(this.getToken(), contentType));
+        return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
 
     }
 
@@ -467,17 +471,17 @@ public class GooglePlayAPI {
      */
     private HttpEntity executePost(String url, String[][] postParams, String[][] headerParams) throws IOException {
 
-	List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+        List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 
-	for (String[] param : postParams) {
-	    if (param[0] != null && param[1] != null) {
-		formparams.add(new BasicNameValuePair(param[0], param[1]));
-	    }
-	}
+        for (String[] param : postParams) {
+            if (param[0] != null && param[1] != null) {
+                formparams.add(new BasicNameValuePair(param[0], param[1]));
+            }
+        }
 
-	UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formparams, "UTF-8");
+        UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formparams, "UTF-8");
 
-	return executePost(url, entity, headerParams);
+        return executePost(url, entity, headerParams);
     }
 
     /**
@@ -485,19 +489,19 @@ public class GooglePlayAPI {
      * parameters and header parameters.
      */
     private HttpEntity executePost(String url, HttpEntity postData, String[][] headerParams) throws IOException {
-	HttpPost httppost = new HttpPost(url);
+        HttpPost httppost = new HttpPost(url);
 
-	if (headerParams != null) {
-	    for (String[] param : headerParams) {
-		if (param[0] != null && param[1] != null) {
-		    httppost.setHeader(param[0], param[1]);
-		}
-	    }
-	}
+        if (headerParams != null) {
+            for (String[] param : headerParams) {
+                if (param[0] != null && param[1] != null) {
+                    httppost.setHeader(param[0], param[1]);
+                }
+            }
+        }
 
-	httppost.setEntity(postData);
+        httppost.setEntity(postData);
 
-	return executeHttpRequest(httppost);
+        return executeHttpRequest(httppost);
     }
 
     /**
@@ -506,129 +510,129 @@ public class GooglePlayAPI {
      */
     private HttpEntity executeGet(String url, String[][] getParams, String[][] headerParams) throws IOException {
 
-	if (getParams != null) {
-	    List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+        if (getParams != null) {
+            List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 
-	    for (String[] param : getParams) {
-		if (param[0] != null && param[1] != null) {
-		    formparams.add(new BasicNameValuePair(param[0], param[1]));
-		}
-	    }
+            for (String[] param : getParams) {
+                if (param[0] != null && param[1] != null) {
+                    formparams.add(new BasicNameValuePair(param[0], param[1]));
+                }
+            }
 
-	    url = url + "?" + URLEncodedUtils.format(formparams, "UTF-8");
-	}
+            url = url + "?" + URLEncodedUtils.format(formparams, "UTF-8");
+        }
 
-	HttpGet httpget = new HttpGet(url);
+        HttpGet httpget = new HttpGet(url);
 
-	if (headerParams != null) {
-	    for (String[] param : headerParams) {
-		if (param[0] != null && param[1] != null) {
-		    httpget.setHeader(param[0], param[1]);
-		}
-	    }
-	}
+        if (headerParams != null) {
+            for (String[] param : headerParams) {
+                if (param[0] != null && param[1] != null) {
+                    httpget.setHeader(param[0], param[1]);
+                }
+            }
+        }
 
-	return executeHttpRequest(httpget);
+        return executeHttpRequest(httpget);
     }
 
-    /** Executes given GET/POST request */
+    /**
+     * Executes given GET/POST request
+     */
     private HttpEntity executeHttpRequest(HttpUriRequest request) throws ClientProtocolException, IOException {
+        HttpResponse response = getClient().execute(request);
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode != 200) {
+            throw new GooglePlayException(new String(Utils.readAll(response.getEntity().getContent())));
+        }
 
-	HttpResponse response = getClient().execute(request);
-
-	if (response.getStatusLine().getStatusCode() != 200) {
-	    throw new GooglePlayException(new String(Utils.readAll(response.getEntity().getContent())));
-	}
-
-	return response.getEntity();
+        return response.getEntity();
     }
 
     /**
      * Gets header parameters for GET/POST requests. If no content type is
      * given, default one is used!
      */
-    private String[][] getHeaderParameters( String token, String contentType ) {
+    private String[][] getHeaderParameters(String token, String contentType) {
 
-	return new String[][] {
-		{ "Accept-Language", getLocalization()!=null?getLocalization():"en-EN" },
-		{ "Authorization", "GoogleLogin auth=" + token },
-		{ "X-DFE-Enabled-Experiments", "cl:billing.select_add_instrument_by_default" },
-		{
-			"X-DFE-Unsupported-Experiments",
-			"nocache:billing.use_charging_poller,market_emails,buyer_currency,prod_baseline,checkin.set_asset_paid_app_field,shekel_test,content_ratings,buyer_currency_in_app,nocache:encrypted_apk,recent_changes" },
-		{ "X-DFE-Device-Id", this.getAndroidID() },
-		{ "X-DFE-Client-Id", "am-android-google" },
-		{ "User-Agent",
-			"Android-Finsky/3.10.14 (api=3,versionCode=8016014,sdk=15,device=GT-I9300,hardware=aries,product=GT-I9300)" },
-		{ "X-DFE-SmallestScreenWidthDp", "320" }, { "X-DFE-Filter-Level", "3" },
-		{ "Host", "android.clients.google.com" },
-		{ "Content-Type", (contentType != null) ? contentType : "application/x-www-form-urlencoded; charset=UTF-8" } };
+        return new String[][]{
+                {"Accept-Language", getLocalization() != null ? getLocalization() : "en-EN"},
+                {"Authorization", "GoogleLogin auth=" + token},
+                {"X-DFE-Enabled-Experiments", "cl:billing.select_add_instrument_by_default"},
+                {
+                        "X-DFE-Unsupported-Experiments",
+                        "nocache:billing.use_charging_poller,market_emails,buyer_currency,prod_baseline,checkin.set_asset_paid_app_field,shekel_test,content_ratings,buyer_currency_in_app,nocache:encrypted_apk,recent_changes"},
+                {"X-DFE-Device-Id", this.getAndroidID()},
+                {"X-DFE-Client-Id", "am-android-google"},
+                {"User-Agent",
+                        "Android-Finsky/3.10.14 (api=3,versionCode=8016014,sdk=15,device=GT-I9300,hardware=aries,product=GT-I9300)"},
+                {"X-DFE-SmallestScreenWidthDp", "320"}, {"X-DFE-Filter-Level", "3"},
+                {"Host", "android.clients.google.com"},
+                {"Content-Type", (contentType != null) ? contentType : "application/x-www-form-urlencoded; charset=UTF-8"}};
     }
 
     public String getToken() {
-	return token;
+        return token;
     }
 
     public void setToken(String token) {
-	this.token = token;
+        this.token = token;
     }
 
     public String getAndroidID() {
-	return androidID;
+        return androidID;
     }
 
     public void setAndroidID(String androidID) {
-	this.androidID = androidID;
+        this.androidID = androidID;
     }
 
     public String getSecurityToken() {
-	return securityToken;
+        return securityToken;
     }
 
     public void setSecurityToken(String securityToken) {
-	this.securityToken = securityToken;
+        this.securityToken = securityToken;
     }
 
     public HttpClient getClient() {
-	return client;
+        return client;
     }
 
     /**
      * Sets {@link HttpClient} instance for internal usage of GooglePlayAPI.
      * It is important to note that this instance should allow concurrent connections.
-     * 
-     * @see getConnectionManager
-     * 
+     *
      * @param client
+     * @see getConnectionManager
      */
     public void setClient(HttpClient client) {
-	this.client = client;
+        this.client = client;
     }
 
     public String getEmail() {
-	return email;
+        return email;
     }
 
     public void setEmail(String email) {
-	this.email = email;
+        this.email = email;
     }
 
-	public String getLocalization() {
-		return localization;
-	}
+    public String getLocalization() {
+        return localization;
+    }
 
-	/**
-	 * Localization string that will be used in each request to server. Using this option
-	 * you can fetch localized informations such as reviews and descriptions. 
-	 * <p>
-	 * Note that changing this value has no affect on localized application list that 
-	 * server provides. It depends on only your IP location.
-	 * <p>
-	 * 
-	 * @param localization can be <b>en-EN, en-US, tr-TR, fr-FR ... (default : en-EN)</b>
-	 */
-	public void setLocalization(String localization) {
-		this.localization = localization;
-	}
+    /**
+     * Localization string that will be used in each request to server. Using this option
+     * you can fetch localized informations such as reviews and descriptions.
+     * <p>
+     * Note that changing this value has no affect on localized application list that
+     * server provides. It depends on only your IP location.
+     * <p>
+     *
+     * @param localization can be <b>en-EN, en-US, tr-TR, fr-FR ... (default : en-EN)</b>
+     */
+    public void setLocalization(String localization) {
+        this.localization = localization;
+    }
 
 }
