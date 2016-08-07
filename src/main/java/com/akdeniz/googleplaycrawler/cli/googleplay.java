@@ -113,6 +113,7 @@ public class googleplay {
 	/* =================Download Arguments============== */
         Subparser downloadParser = subparsers.addParser("download", true).description("download file(s)!")
                 .setDefault("command", COMMAND.DOWNLOAD);
+        downloadParser.addArgument("sdk").required(true).help("set application sdk");
         downloadParser.addArgument("packagename").nargs("+").help("applications to download");
 
 	/* =================Check-In Arguments============== */
@@ -282,7 +283,7 @@ public class googleplay {
         connector.removeFilter(barf);
 
 	/*if(bindAccountResponse==null){
-	    throw new IllegalStateException("Account bind response could not be received!");
+        throw new IllegalStateException("Account bind response could not be received!");
 	} else if(bindAccountResponse.hasError()){
 	    throw new IllegalStateException(bindAccountResponse.getError().getExtension(0).getMessage());
 	}*/
@@ -431,6 +432,7 @@ public class googleplay {
             androidid = properties.getProperty("androidid");
             email = properties.getProperty("email");
             password = properties.getProperty("password");
+            // TODO: 可能是切换国家的地方
             localization = properties.getProperty("localization");
 
             if (androidid != null && email != null && password != null) {
@@ -543,8 +545,9 @@ public class googleplay {
     private void downloadCommand() throws Exception {
         login();
         List<String> packageNames = namespace.getList("packagename");
+        String sdk = namespace.getString("sdk");
         for (String packageName : packageNames) {
-            download(packageName);
+            download(packageName, sdk);
         }
     }
 
@@ -625,7 +628,7 @@ public class googleplay {
         return client;
     }
 
-    private void download(String packageName) throws IOException {
+    private void download(String packageName, String sdk) throws IOException {
         DetailsResponse details = service.details(packageName);
         AppDetails appDetails = details.getDocV2().getDetails().getAppDetails();
         Offer offer = details.getDocV2().getOffer(0);
@@ -642,7 +645,7 @@ public class googleplay {
         }
 
         System.out.println("Downloading..." + appDetails.getPackageName() + " : " + installationSize + " bytes");
-        InputStream downloadStream = service.download(appDetails.getPackageName(), versionCode, offerType);
+        InputStream downloadStream = service.download(appDetails.getPackageName(), versionCode, offerType, sdk);
 
         FileOutputStream outputStream = new FileOutputStream(appDetails.getPackageName() + ".apk");
 

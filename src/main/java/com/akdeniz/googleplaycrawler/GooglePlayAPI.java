@@ -3,10 +3,7 @@ package com.akdeniz.googleplaycrawler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -200,7 +197,7 @@ public class GooglePlayAPI {
 
         String c2dmAuth = loginAC2DM();
         String[][] data = new String[][]{{"app", application}, {"sender", sender}, {"device", new BigInteger(this.getAndroidID(), 16).toString()}};
-        HttpEntity responseEntity = executePost(C2DM_REGISTER_URL, data, getHeaderParameters(c2dmAuth, null));
+        HttpEntity responseEntity = executePost(C2DM_REGISTER_URL, data, getHeaderParameters(c2dmAuth, null, "21"));
         return Utils.parseResponse(new String(Utils.readAll(responseEntity.getContent())));
     }
 
@@ -321,9 +318,9 @@ public class GooglePlayAPI {
      * Downloads given application package name, version and offer type. Version
      * code and offer type can be fetch by <code>details</code> interface.
      **/
-    public InputStream download(String packageName, int versionCode, int offerType) throws IOException {
+    public InputStream download(String packageName, int versionCode, int offerType, String sdk) throws IOException {
 
-        BuyResponse buyResponse = purchase(packageName, versionCode, offerType);
+        BuyResponse buyResponse = purchase(packageName, versionCode, offerType, sdk);
 
         AndroidAppDeliveryData appDeliveryData = buyResponse.getPurchaseStatusResponse().getAppDeliveryData();
 
@@ -350,10 +347,10 @@ public class GooglePlayAPI {
      * This function is used for fetching download url and donwload cookie,
      * rather than actual purchasing.
      */
-    private BuyResponse purchase(String packageName, int versionCode, int offerType) throws IOException {
+    private BuyResponse purchase(String packageName, int versionCode, int offerType, String sdk) throws IOException {
 
         ResponseWrapper responseWrapper = executePOSTRequest(PURCHASE_URL, new String[][]{{"ot", String.valueOf(offerType)},
-                {"doc", packageName}, {"vc", String.valueOf(versionCode)},});
+                {"doc", packageName}, {"vc", String.valueOf(versionCode)},}, sdk);
 
         return responseWrapper.getPayload().getBuyResponse();
     }
@@ -436,7 +433,7 @@ public class GooglePlayAPI {
      */
     private ResponseWrapper executeGETRequest(String path, String[][] datapost) throws IOException {
 
-        HttpEntity httpEntity = executeGet(path, datapost, getHeaderParameters(this.getToken(), null));
+        HttpEntity httpEntity = executeGet(path, datapost, getHeaderParameters(this.getToken(), null, "21"));
         return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
 
     }
@@ -447,9 +444,9 @@ public class GooglePlayAPI {
      *
      * @see getHeaderParameters
      */
-    private ResponseWrapper executePOSTRequest(String path, String[][] datapost) throws IOException {
+    private ResponseWrapper executePOSTRequest(String path, String[][] datapost, String sdk) throws IOException {
 
-        HttpEntity httpEntity = executePost(path, datapost, getHeaderParameters(this.getToken(), null));
+        HttpEntity httpEntity = executePost(path, datapost, getHeaderParameters(this.getToken(), null, sdk));
         return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
 
     }
@@ -460,7 +457,7 @@ public class GooglePlayAPI {
      */
     private ResponseWrapper executePOSTRequest(String url, byte[] datapost, String contentType) throws IOException {
 
-        HttpEntity httpEntity = executePost(url, new ByteArrayEntity(datapost), getHeaderParameters(this.getToken(), contentType));
+        HttpEntity httpEntity = executePost(url, new ByteArrayEntity(datapost), getHeaderParameters(this.getToken(), contentType, "21"));
         return GooglePlay.ResponseWrapper.parseFrom(httpEntity.getContent());
 
     }
@@ -552,8 +549,22 @@ public class GooglePlayAPI {
      * Gets header parameters for GET/POST requests. If no content type is
      * given, default one is used!
      */
-    private String[][] getHeaderParameters(String token, String contentType) {
+    private String[][] getHeaderParameters(String token, String contentType, String sdk) {
 
+        Map<String, String> sdkMap = new HashMap<>();
+        sdkMap.put("10", "2.3.3");
+        sdkMap.put("11", "3.0");
+        sdkMap.put("12", "3.1");
+        sdkMap.put("13", "3.2");
+        sdkMap.put("14", "4.0");
+        sdkMap.put("15", "4.0.3");
+        sdkMap.put("16", "4.1");
+        sdkMap.put("17", "4.2");
+        sdkMap.put("18", "4.3");
+        sdkMap.put("19", "4.4");
+        sdkMap.put("20", "4.4");
+        sdkMap.put("21", "5.0");
+        sdkMap.put("22", "6.0.0");
         return new String[][]{
                 {"Accept-Language", getLocalization() != null ? getLocalization() : "en-EN"},
                 {"Authorization", "GoogleLogin auth=" + token},
@@ -564,7 +575,7 @@ public class GooglePlayAPI {
                 {"X-DFE-Device-Id", this.getAndroidID()},
                 {"X-DFE-Client-Id", "am-android-google"},
                 {"User-Agent",
-                        "Android-Finsky/3.10.14 (api=3,versionCode=8016014,sdk=15,device=GT-I9300,hardware=aries,product=GT-I9300)"},
+                        "Android-Finsky/" + sdkMap.get(sdk) + " (api=" + sdkMap.get(sdk) + ",versionCode=8016014,sdk=" + sdk + ",device=GT-I9300,hardware=aries,product=GT-I9300)"},
                 {"X-DFE-SmallestScreenWidthDp", "320"}, {"X-DFE-Filter-Level", "3"},
                 {"Host", "android.clients.google.com"},
                 {"Content-Type", (contentType != null) ? contentType : "application/x-www-form-urlencoded; charset=UTF-8"}};
