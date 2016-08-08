@@ -364,8 +364,8 @@ public class GooglePlayAPI {
     public InputStream executeDownload(String url, String cookie) throws IOException {
 
         String[][] headerParams = new String[][]{{"Cookie", cookie},
-                {"User-Agent", "AndroidDownloadManager/4.1.1 (Linux; U; Android 4.1.1; Nexus S Build/JRO03E)"},};
-        String ua = "User-Agent: AndroidDownloadManager/4.1.1 (Linux; U; Android 4.1.1; Nexus S Build/JRO03E)";
+                {"User-Agent", "AndroidDownloadManager/5.1.1 (Linux; U; Android 5.1.1; SAMSUNG-SM-G530AZ Build/LMY48B)"},};
+        String ua = "User-Agent: AndroidDownloadManager/5.1.1 (Linux; U; Android 5.1.1; SAMSUNG-SM-G530AZ Build/LMY48B)";
         System.out.println("curl -IL \"" + url + "\" -H \"" + ua + "\"" + " -H \"Cookie: " + cookie + "\"");
 
         HttpEntity httpEntity = executeGet(url, null, headerParams);
@@ -566,10 +566,18 @@ public class GooglePlayAPI {
         sdkMap.put("18", "4.3 Jelly Bean");
         sdkMap.put("19", "4.4 KitKat");
         sdkMap.put("20", "4.4W");
-        sdkMap.put("21", "5.0 Lollipop");
+        sdkMap.put("21", "5.1.11");
         sdkMap.put("22", "5.1 Lollipop");
         sdkMap.put("23", "6.0 Marshmallow");
         sdkMap.put("24", "7.0 Nougat");
+
+        Map<String, String> vcodeMap = new HashMap<>();
+        vcodeMap.put("21", "80310011");
+        vcodeMap.put("23", "80682400");
+        // 该信息为我的调试机器实际数据
+        String ua = "Android-Finsky/" + sdkMap.get(sdk) + " (versionCode=" + vcodeMap.get(sdk) + ",sdk=" + sdk + ",device=AQ5001,hardware=mt6582,product=AQ5001,build=LRX21M:user)";
+        // String ua = "Android-Finsky/" + sdkMap.get(sdk) + " (api=" + sdkMap.get(sdk) + ",versionCode=8016014,sdk=" + sdk + ",device=GT-I9300,hardware=aries,product=GT-I9300)"},
+        //System.out.printf(ua, sdkMap.get(sdk), vcodeMap.get(sdk), sdk, "AQ5001", "mt6582", "AQ5001", "LRX21M", "user");
         return new String[][]{
                 {"Accept-Language", getLocalization() != null ? getLocalization() : "en-EN"},
                 {"Authorization", "GoogleLogin auth=" + token},
@@ -577,7 +585,7 @@ public class GooglePlayAPI {
                 {"X-DFE-Unsupported-Experiments", "nocache:billing.use_charging_poller,market_emails,buyer_currency,prod_baseline,checkin.set_asset_paid_app_field,shekel_test,content_ratings,buyer_currency_in_app,nocache:encrypted_apk,recent_changes"},
                 {"X-DFE-Device-Id", this.getAndroidID()},
                 {"X-DFE-Client-Id", "am-android-google"},
-                {"User-Agent", "Android-Finsky/" + sdkMap.get(sdk) + " (api=" + sdkMap.get(sdk) + ",versionCode=8016014,sdk=" + sdk + ",device=GT-I9300,hardware=aries,product=GT-I9300)"},
+                {"User-Agent", ua},
                 {"X-DFE-SmallestScreenWidthDp", "320"},
                 {"X-DFE-Filter-Level", "3"},
                 {"Host", "android.clients.google.com"},
