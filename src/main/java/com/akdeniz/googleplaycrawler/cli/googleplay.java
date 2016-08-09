@@ -633,28 +633,31 @@ public class googleplay {
         Offer offer = details.getDocV2().getOffer(0);
 
         int versionCode = appDetails.getVersionCode();
-        long installationSize = appDetails.getInstallationSize();
-        int offerType = offer.getOfferType();
-        boolean checkoutRequired = offer.getCheckoutFlowRequired();
-
-        // paid application...ignore
-        if (checkoutRequired) {
-            System.out.println("Checkout required! Ignoring.." + appDetails.getPackageName());
-            return;
-        }
-
-        System.out.println("Downloading..." + appDetails.getPackageName() + " : " + installationSize + " bytes");
-        InputStream downloadStream = service.download(appDetails.getPackageName(), versionCode, offerType, sdk);
-
-        FileOutputStream outputStream = new FileOutputStream(appDetails.getPackageName() + ".apk");
-
-        byte buffer[] = new byte[1024];
-        for (int k = 0; (k = downloadStream.read(buffer)) != -1; ) {
-            outputStream.write(buffer, 0, k);
-        }
-        downloadStream.close();
-        outputStream.close();
-        System.out.println("Downloaded! " + appDetails.getPackageName() + ".apk");
+        String versionStr = appDetails.getVersionString();
+        System.out.print(packageName + "," + versionCode + "," + versionStr);
+        // TODO: download
+//        long installationSize = appDetails.getInstallationSize();
+//        int offerType = offer.getOfferType();
+//        boolean checkoutRequired = offer.getCheckoutFlowRequired();
+//
+//        // paid application...ignore
+//        if (checkoutRequired) {
+//            System.out.println("Checkout required! Ignoring.." + appDetails.getPackageName());
+//            return;
+//        }
+//
+//        System.out.println("Downloading..." + appDetails.getPackageName() + " : " + installationSize + " bytes");
+//        InputStream downloadStream = service.download(appDetails.getPackageName(), versionCode, offerType, sdk);
+//
+//        FileOutputStream outputStream = new FileOutputStream(appDetails.getPackageName() + ".apk");
+//
+//        byte buffer[] = new byte[1024];
+//        for (int k = 0; (k = downloadStream.read(buffer)) != -1; ) {
+//            outputStream.write(buffer, 0, k);
+//        }
+//        downloadStream.close();
+//        outputStream.close();
+//        System.out.println("Downloaded! " + appDetails.getPackageName() + ".apk");
     }
 
 }
